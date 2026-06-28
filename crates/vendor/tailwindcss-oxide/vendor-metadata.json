@@ -1,0 +1,12 @@
+{
+  "tailwindVersion": "4.3.1",
+  "tailwindTag": "v4.3.1",
+  "tailwindSha": "8a14a710102cae195f6811e8578bef9477bc6be9",
+  "source": "https://github.com/tailwindlabs/tailwindcss.git",
+  "vendoredCrates": [
+    "oxide",
+    "classification-macros",
+    "ignore"
+  ],
+  "generatedAt": "2026-06-28T22:49:20.625Z"
+}

@@ -1,0 +1,8 @@
+[workspace]
+members = ["crates/extractor-wasm"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/toby/vaportrail"

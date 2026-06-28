@@ -1,0 +1,3 @@
+[workspace]
+members = ["extractor-wasm"]
+resolver = "2"

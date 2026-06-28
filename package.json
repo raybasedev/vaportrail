@@ -1,0 +1,83 @@
+{
+  "name": "@raybase/vaportrail",
+  "version": "0.1.0",
+  "description": "Worker-compatible runtime Tailwind scanning and compilation for Cloudflare Workers.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/compiler/index.d.ts",
+      "workerd": "./dist/workerd/compiler/index.js",
+      "import": "./dist/compiler/index.js"
+    },
+    "./extractor": {
+      "types": "./dist/extractor/index.d.ts",
+      "workerd": "./dist/workerd/extractor/index.js",
+      "import": "./dist/extractor/index.js"
+    },
+    "./compiler": {
+      "types": "./dist/compiler/index.d.ts",
+      "workerd": "./dist/workerd/compiler/index.js",
+      "import": "./dist/compiler/index.js"
+    },
+    "./cloudflare": {
+      "types": "./dist/cloudflare/index.d.ts",
+      "workerd": "./dist/workerd/cloudflare/index.js",
+      "import": "./dist/cloudflare/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "workerd": "./dist/workerd/worker/index.js",
+      "import": "./dist/worker/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "npm run build:wasm && tsup && node scripts/build-workerd.mjs",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "vendor:tailwind": "node scripts/vendor-tailwind-oxide.mjs",
+    "check:vendor": "node scripts/check-vendor-tailwind.mjs",
+    "test": "npm run test:unit && npm run test:worker",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:worker": "npm run build && vitest run --config vitest.worker.config.ts",
+    "test:cf:deploy": "node scripts/test-cf-deploy.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "pack:dry": "npm pack --dry-run --ignore-scripts",
+    "prepack": "npm run check:vendor && npm run build && npm test"
+  },
+  "dependencies": {
+    "postcss": "8.5.16",
+    "tailwindcss": "4.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.16.20",
+    "@cloudflare/workers-types": "4.20260628.1",
+    "@tailwindcss/oxide": "4.3.1",
+    "@types/node": "26.0.1",
+    "binaryen": "130.0.0",
+    "tsup": "8.5.1",
+    "tsx": "4.22.4",
+    "typescript": "6.0.3",
+    "vitest": "4.1.9",
+    "wrangler": "4.105.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raybasedev/vaportrail.git"
+  },
+  "bugs": {
+    "url": "https://github.com/raybasedev/vaportrail/issues"
+  },
+  "homepage": "https://github.com/raybasedev/vaportrail#readme"
+}
