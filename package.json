@@ -1,6 +1,6 @@
 {
   "name": "@raybase/vaportrail",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Worker-compatible runtime Tailwind scanning and compilation for Cloudflare Workers.",
   "type": "module",
   "license": "MIT",

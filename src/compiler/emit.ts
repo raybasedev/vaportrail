@@ -1,4 +1,4 @@
-import postcss, { type AtRule, type ChildNode } from "postcss";
+import postcss, { type AtRule, type ChildNode, type Rule } from "postcss";
 import type { EmitPolicy, ResolvedEmitPolicy } from "./types.js";
 
 const allPolicy: ResolvedEmitPolicy = {
@@ -33,12 +33,19 @@ export function normalizeEmitPolicy(policy: EmitPolicy | undefined): ResolvedEmi
   };
 }
 
-export function applyEmitPolicy(css: string, policy: ResolvedEmitPolicy): string {
-  if (isFullPolicy(policy)) {
+export function applyEmitPolicy(input: {
+  css: string;
+  baselineCss: string;
+  policy: ResolvedEmitPolicy;
+}): string {
+  const { css, baselineCss, policy } = input;
+
+  if (isFullEmitPolicy(policy)) {
     return css;
   }
 
   const root = postcss.parse(css);
+  const baselineTopLevelNodes = topLevelNodeFingerprints(baselineCss);
 
   root.walkAtRules("layer", (rule) => {
     if (!rule.nodes) {
@@ -53,7 +60,7 @@ export function applyEmitPolicy(css: string, policy: ResolvedEmitPolicy): string
   });
 
   for (const node of [...root.nodes]) {
-    if (!shouldKeepTopLevelNode(node, policy)) {
+    if (!shouldKeepTopLevelNode(node, policy, baselineTopLevelNodes)) {
       node.remove();
     }
   }
@@ -61,7 +68,7 @@ export function applyEmitPolicy(css: string, policy: ResolvedEmitPolicy): string
   return root.toString();
 }
 
-function isFullPolicy(policy: ResolvedEmitPolicy): boolean {
+export function isFullEmitPolicy(policy: ResolvedEmitPolicy): boolean {
   return (
     policy.theme === "all" &&
     policy.base &&
@@ -71,7 +78,14 @@ function isFullPolicy(policy: ResolvedEmitPolicy): boolean {
   );
 }
 
-function shouldKeepTopLevelNode(node: ChildNode, policy: ResolvedEmitPolicy): boolean {
+function shouldKeepTopLevelNode(
+  node: ChildNode,
+  policy: ResolvedEmitPolicy,
+  baselineTopLevelNodes: ReadonlySet<string>,
+): boolean {
+  const keepComponentOrGeneratedUtility =
+    policy.components || isGeneratedTopLevelUtility(node, policy.utilities, baselineTopLevelNodes);
+
   if (node.type === "comment") {
     return true;
   }
@@ -89,10 +103,14 @@ function shouldKeepTopLevelNode(node: ChildNode, policy: ResolvedEmitPolicy): bo
       return policy.utilities;
     }
 
-    return policy.components;
+    return keepComponentOrGeneratedUtility;
   }
 
-  return policy.components;
+  if (node.type === "rule" && isTopLevelThemeRule(node)) {
+    return policy.theme === "all";
+  }
+
+  return keepComponentOrGeneratedUtility;
 }
 
 function rewriteLayerOrder(rule: AtRule, policy: ResolvedEmitPolicy): void {
@@ -119,4 +137,33 @@ function shouldKeepLayer(layer: string, policy: ResolvedEmitPolicy): boolean {
   if (layer === "components") return policy.components;
   if (layer === "utilities") return policy.utilities;
   return policy.components;
+}
+
+function topLevelNodeFingerprints(css: string): Set<string> {
+  const root = postcss.parse(css);
+  return new Set(root.nodes.map((node) => nodeFingerprint(node)));
+}
+
+function isGeneratedTopLevelUtility(
+  node: ChildNode,
+  keepUtilities: boolean,
+  baselineTopLevelNodes: ReadonlySet<string>,
+): boolean {
+  return keepUtilities && !baselineTopLevelNodes.has(nodeFingerprint(node));
+}
+
+function nodeFingerprint(node: ChildNode): string {
+  return node.toString().trim();
+}
+
+function isTopLevelThemeRule(node: Rule): boolean {
+  if (node.selector !== ":root, :host" && node.selector !== ":root") {
+    return false;
+  }
+
+  const declarations = node.nodes?.filter((child) => child.type === "decl") ?? [];
+  return (
+    declarations.length > 0 &&
+    declarations.every((declaration) => declaration.prop.startsWith("--"))
+  );
 }

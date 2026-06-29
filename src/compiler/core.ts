@@ -1,5 +1,5 @@
 import { compile as compileTailwind } from "tailwindcss";
-import { applyEmitPolicy, normalizeEmitPolicy } from "./emit.js";
+import { applyEmitPolicy, isFullEmitPolicy, normalizeEmitPolicy } from "./emit.js";
 import { hashJson, sha256Hex, stableStringify } from "./hash.js";
 import { createStylesheetLoader } from "./stylesheet.js";
 import {
@@ -53,8 +53,13 @@ export function createCompiler(runtime: ExtractorRuntime) {
       return cached;
     }
 
+    const baselineCss = isFullEmitPolicy(emitPolicy) ? "" : builder.build([]);
     const fullCss = builder.build(candidates);
-    const css = applyEmitPolicy(fullCss, emitPolicy);
+    const css = applyEmitPolicy({
+      css: fullCss,
+      baselineCss,
+      policy: emitPolicy,
+    });
     const hash = await sha256Hex(css);
     const result = { css, candidates, hash, cacheKey };
 
